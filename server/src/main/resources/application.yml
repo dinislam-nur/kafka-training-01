@@ -1,7 +1,4 @@
 spring:
-  kafka:
-    template:
-      default-topic: response
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres

@@ -10,9 +10,4 @@ public class ServerApplication {
         SpringApplication.run(ServerApplication.class, args);
     }
 
-//    @Bean
-//    public ApplicationRunner runner(Producer producer) {
-//        return args -> producer.send("Привет от сервера");
-//    }
-
 }

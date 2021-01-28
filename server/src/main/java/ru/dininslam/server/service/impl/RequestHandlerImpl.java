@@ -8,6 +8,9 @@ import ru.dininslam.server.enums.Operation;
 import ru.dininslam.server.service.BillService;
 import ru.dininslam.server.service.RequestHandler;
 
+import javax.validation.ValidationException;
+
+
 @Service
 @RequiredArgsConstructor
 public class RequestHandlerImpl implements RequestHandler {
@@ -16,6 +19,7 @@ public class RequestHandlerImpl implements RequestHandler {
 
     @Override
     public Response processRequest(Request request) {
+        validate(request);
         final Operation operation = request.getOperation();
         switch (operation) {
             case CREATE: {
@@ -36,6 +40,12 @@ public class RequestHandlerImpl implements RequestHandler {
             default: {
                 throw new IllegalStateException();
             }
+        }
+    }
+
+    private void validate(Request request) {
+        if(request.getSourceId() == null || request.getOperation() == null) {
+            throw new ValidationException();
         }
     }
 }

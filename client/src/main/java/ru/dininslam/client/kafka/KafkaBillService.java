@@ -33,34 +33,53 @@ public class KafkaBillService {
     @Value("${operation}")
     private String operation;
 
-    private final ReplyingKafkaTemplate<Long, Request, Response>  replyingKafkaTemplate;
+    private final ReplyingKafkaTemplate<String, String, String>  replyingKafkaTemplate;
+    private final ClientMessageConverter converter;
 
     public void sendAndReceive() {
         try {
-            final long sourceId = Long.parseLong(this.sourceId);
             final Request request = Request.builder()
-                    .sourceId(sourceId)
+                    .sourceId(Long.parseLong(this.sourceId))
                     .targetId(Long.parseLong(targetId))
                     .operation(Operation.valueOf(operation))
                     .value(Long.parseLong(value))
                     .build();
             replyingKafkaTemplate.setSharedReplyTopic(true);
-            final ProducerRecord<Long, Request> record = new ProducerRecord<>("response", 0, sourceId, request);
-            final RequestReplyFuture<Long, Request, Response> replyFuture = replyingKafkaTemplate.sendAndReceive(record);
-            final SendResult<Long, Request> sentResult = replyFuture.getSendFuture().get(10, TimeUnit.SECONDS);
+            final ProducerRecord<String, String> record = new ProducerRecord<>(
+                    "main",
+                    0,
+                    String.valueOf(Long.parseLong(this.sourceId)),
+                    converter.toMessage(request));
+            final RequestReplyFuture<String, String, String> replyFuture = replyingKafkaTemplate.sendAndReceive(record);
+            final SendResult<String, String> sentResult = replyFuture.getSendFuture().get(10, TimeUnit.SECONDS);
             System.out.println("Success sent: " + sentResult.getRecordMetadata());
-            final ConsumerRecord<Long, Response> consumedResult = replyFuture.get(10, TimeUnit.SECONDS);
-            final Response response = consumedResult.value();
-            System.out.println(response);
+            processResponse(replyFuture);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            System.out.println("Interrupted");
         } catch (ExecutionException e) {
-            System.out.println("Failure to send");
+            System.out.println("Failure execution request");
         } catch (TimeoutException e) {
-            e.printStackTrace();
+            System.out.println("Failure by timeout");
             sendAndReceive();
         }
 
+    }
+
+    private void processResponse(RequestReplyFuture<String, String, String> future) {
+        try {
+            final ConsumerRecord<String, String> consumedResult = future.get(10, TimeUnit.SECONDS);
+            System.out.println("<Success reply --------------->");
+            final Response response = converter.fromMessage(consumedResult.value());
+            System.out.println("Статус код ответа: " + response.getStatus().getCode());
+            System.out.println("Сообщение: " + response.getMessage());
+            System.out.println("Данные: " + response.getPayload());
+        } catch (InterruptedException e) {
+            System.out.println("Interrupted waiting response");
+        } catch (ExecutionException e) {
+            System.out.println("Failure execution response");
+        } catch (TimeoutException e) {
+            System.out.println("Failure by timeout waiting response");
+        }
     }
 
 }
