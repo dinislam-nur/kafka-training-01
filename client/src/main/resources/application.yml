@@ -1,0 +1,9 @@
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    template:
+      default-topic: training
+    consumer:
+      auto-offset-reset: latest
+    listener:
+      missing-topics-fatal: true
