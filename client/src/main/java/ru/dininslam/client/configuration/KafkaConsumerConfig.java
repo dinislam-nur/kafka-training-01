@@ -38,8 +38,4 @@ public class KafkaConsumerConfig {
         return container;
     }
 
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
 }

@@ -4,7 +4,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import ru.dininslam.client.kafka.KafkaBillService;
+import ru.dininslam.client.kafka.Performer;
 
 @SpringBootApplication
 public class ClientApplication {
@@ -14,8 +14,8 @@ public class ClientApplication {
     }
 
     @Bean
-    public ApplicationRunner runner(KafkaBillService kafkaService) {
-        return args -> kafkaService.sendAndReceive();
+    public ApplicationRunner runner(Performer performer) {
+        return args -> performer.perform();
     }
 
 }

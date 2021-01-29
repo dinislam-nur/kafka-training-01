@@ -3,7 +3,6 @@ package ru.dininslam.client.kafka;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
 import org.springframework.kafka.requestreply.RequestReplyFuture;
 import org.springframework.kafka.support.SendResult;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Component;
 import ru.dininslam.client.dto.ClientMessageConverter;
 import ru.dininslam.client.dto.Request;
 import ru.dininslam.client.dto.Response;
-import ru.dininslam.client.dto.enums.Operation;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -21,34 +19,16 @@ import java.util.concurrent.TimeoutException;
 @RequiredArgsConstructor
 public class KafkaBillService {
 
-    @Value("${sourceId}")
-    private String sourceId;
-
-    @Value("${targetId}")
-    private String targetId;
-
-    @Value("${value}")
-    private String value;
-
-    @Value("${operation}")
-    private String operation;
-
     private final ReplyingKafkaTemplate<String, String, String>  replyingKafkaTemplate;
     private final ClientMessageConverter converter;
 
-    public void sendAndReceive() {
+    public void sendAndReceive(Request request) {
         try {
-            final Request request = Request.builder()
-                    .sourceId(Long.parseLong(this.sourceId))
-                    .targetId(Long.parseLong(targetId))
-                    .operation(Operation.valueOf(operation))
-                    .value(Long.parseLong(value))
-                    .build();
             replyingKafkaTemplate.setSharedReplyTopic(true);
             final ProducerRecord<String, String> record = new ProducerRecord<>(
                     "main",
                     0,
-                    String.valueOf(Long.parseLong(this.sourceId)),
+                    String.valueOf(request.getSourceId()),
                     converter.toMessage(request));
             final RequestReplyFuture<String, String, String> replyFuture = replyingKafkaTemplate.sendAndReceive(record);
             final SendResult<String, String> sentResult = replyFuture.getSendFuture().get(10, TimeUnit.SECONDS);
@@ -60,7 +40,7 @@ public class KafkaBillService {
             System.out.println("Failure execution request");
         } catch (TimeoutException e) {
             System.out.println("Failure by timeout");
-            sendAndReceive();
+            sendAndReceive(request);
         }
 
     }
